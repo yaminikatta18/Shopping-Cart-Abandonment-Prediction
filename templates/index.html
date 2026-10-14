@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cart Abandonment Predictor</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<header class="top">
+  <div class="brand">🛒 CartGuard <span>ML</span></div>
+  <nav>
+    <a href="#predict">Predict</a><a href="#about">Project</a><a href="#models">Models</a>
+    <a href="#evaluation">Evaluation</a><a href="#importance">Features</a><a href="#syllabus">Syllabus</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>Shopping Cart Abandonment Prediction</h1>
+  <p>Decision Tree and Random Forest classifiers that predict whether a customer will complete a purchase or abandon their cart.</p>
+  <a class="btn" href="#predict">Try the predictor</a>
+</section>
+
+<main>
+<section id="predict" class="card">
+  <h2>Live Predictor</h2>
+  <p class="muted">Enter customer behaviour and both models respond instantly.</p>
+  <div class="grid2">
+    <form id="form">
+      <label>Browsing time (minutes) <b id="v_browsing_time">15</b>
+        <input type="range" id="browsing_time" min="1" max="60" step="0.5" value="15"></label>
+      <label>Products viewed <b id="v_products_viewed">9</b>
+        <input type="range" id="products_viewed" min="1" max="40" step="1" value="9"></label>
+      <label>Cart value (₹ / $) <b id="v_cart_value">75</b>
+        <input type="range" id="cart_value" min="10" max="1000" step="5" value="75"></label>
+      <label>Previous purchases <b id="v_previous_purchases">2</b>
+        <input type="range" id="previous_purchases" min="0" max="15" step="1" value="2"></label>
+      <label class="check"><input type="checkbox" id="discount_usage"> Customer used a discount</label>
+      <button type="submit" class="btn">Predict</button>
+      <p id="error" class="error"></p>
+    </form>
+    <div id="result" class="result hidden">
+      <div class="pred-row">
+        <div class="pred" id="rf_box"><small>Random Forest</small><strong id="rf_label"></strong>
+          <div class="bar"><i id="rf_bar"></i></div><span id="rf_prob"></span></div>
+        <div class="pred" id="dt_box"><small>Decision Tree</small><strong id="dt_label"></strong>
+          <div class="bar"><i id="dt_bar"></i></div><span id="dt_prob"></span></div>
+      </div>
+      <div class="advice" id="advice"></div>
+      <h4>Why the Decision Tree decided this</h4>
+      <ol id="path"></ol>
+    </div>
+  </div>
+</section>
+
+<section id="about" class="card">
+  <h2>About the Project</h2>
+  <div class="grid2">
+    <div>
+      <h3>Problem</h3>
+      <p>Customers add products to their cart but leave without buying, causing lost revenue. Browsing time, products viewed, cart value, previous purchases and discount usage reveal patterns that can flag likely abandonment early.</p>
+      <h3>Objectives</h3>
+      <ul>
+        <li>Analyse customer behaviour and the factors behind abandonment</li>
+        <li>Preprocess data and build Decision Tree and Random Forest models</li>
+        <li>Evaluate and compare models, then predict abandon vs purchase</li>
+        <li>Enable timely actions: reminders and personalised offers</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Dataset</h3>
+      <div id="dataset" class="stats"></div>
+      <h3>Target variable</h3>
+      <p><code>0</code> = Purchase Completed &nbsp; <code>1</code> = Cart Abandoned</p>
+      <div class="pipeline">
+        <span>Raw data</span>→<span>Features</span>→<span>Train/Test split</span>→<span>Model</span>→<span>Evaluate</span>→<span>Serve API</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="models" class="card">
+  <h2>The Algorithms</h2>
+  <div class="grid2">
+    <div class="algo"><h3>🌳 Decision Tree</h3>
+      <p>Splits data using the feature thresholds that best reduce Gini impurity, following branches down to a leaf prediction. Depth is limited (max_depth=5, min_samples_leaf=20) as pre-pruning to control over-fitting.</p>
+      <p class="flow">Customer data → Decision rules → Prediction</p>
+      <pre id="rules"></pre></div>
+    <div class="algo"><h3>🌲 Random Forest</h3>
+      <p>Bagging: 200 trees trained on bootstrap samples with random feature subsets. Votes are averaged, which reduces variance versus a single tree. The out-of-bag score gives a built-in validation estimate.</p>
+      <p class="flow">Customer data → Many trees → Combined vote → Cart status</p>
+      <div class="stats"><div><b id="oob">–</b><small>OOB accuracy</small></div></div></div>
+  </div>
+  <h3>Depth vs accuracy (validation curve)</h3>
+  <p class="muted">Training accuracy keeps rising while test accuracy peaks then falls: classic over-fitting.</p>
+  <canvas id="depthChart" height="110"></canvas>
+</section>
+
+<section id="evaluation" class="card">
+  <h2>Model Evaluation</h2>
+  <div class="grid2"><canvas id="metricChart"></canvas><canvas id="rocChart"></canvas></div>
+  <table id="metricTable"></table>
+  <h3>Confusion matrices</h3>
+  <div class="grid2" id="cms"></div>
+  <h3>5-fold cross-validation (accuracy)</h3>
+  <div id="cv" class="stats"></div>
+</section>
+
+<section id="importance" class="card">
+  <h2>Feature Importance</h2>
+  <p class="muted">Cart value contributes most; discount usage the least. Permutation importance on the test set confirms the forest's Gini ranking.</p>
+  <canvas id="impChart" height="110"></canvas>
+</section>
+
+<section id="syllabus" class="card">
+  <h2>Syllabus Mapping</h2>
+  <table class="map">
+    <tr><th>Module</th><th>Where it appears in this project</th></tr>
+    <tr><td>M1 · ML as a system</td><td>End-to-end pipeline: data → features → training → saved artifact → Flask endpoint → this UI. Supervised binary classification.</td></tr>
+    <tr><td>M2 · Linear models</td><td>Used as the conceptual baseline; numeric scaling is not required for trees. Binary target 0/1 with a probability output.</td></tr>
+    <tr><td>M3 · Tree-based models</td><td>Decision Tree (Gini, pruning), Random Forest (bagging, OOB), Gini and permutation feature importance.</td></tr>
+    <tr><td>M4 · Unsupervised</td><td>Future scope: cluster shoppers into segments and use cluster labels as extra features.</td></tr>
+    <tr><td>M5 · Evaluation</td><td>Stratified train/test split, stratified k-fold CV, accuracy / precision / recall / F1 / ROC-AUC, confusion matrix, validation curve.</td></tr>
+    <tr><td>M6 · ML engineering</td><td>Packaged models (joblib), REST serving with input validation, same feature order in training and serving to avoid skew, metrics saved for monitoring.</td></tr>
+  </table>
+</section>
+</main>
+<footer>Machine Learning – 25SC2107E · Yamini Katta (2520030380) · Lekhana L (2520030364) · Guided by Rani Mam</footer>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
